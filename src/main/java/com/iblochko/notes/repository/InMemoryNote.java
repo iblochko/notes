@@ -23,7 +23,7 @@ public class InMemoryNote {
         }
         return notes.stream()
                 .filter(note -> note.getTitle().toLowerCase().contains(title.toLowerCase()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Note findNoteById(long id) {

@@ -8,6 +8,7 @@ class NotesApplicationTests {
 
 	@Test
 	void contextLoads() {
+		//dont need it now
 	}
 
 }
