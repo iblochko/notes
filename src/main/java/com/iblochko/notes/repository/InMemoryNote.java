@@ -3,9 +3,10 @@ package com.iblochko.notes.repository;
 import com.iblochko.notes.model.Note;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.server.ResponseStatusException;
 
 
 @Repository
@@ -30,7 +31,8 @@ public class InMemoryNote {
         return notes.stream()
                 .filter(element -> element.getId() == id)
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(()
+                        -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Note not found"));
     }
 
     public Note updateNote(Note note) {
