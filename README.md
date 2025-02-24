@@ -1,5 +1,64 @@
-# RESTful notes program
-This program can be describe like web obsidian, which can help you work with your markdown notes, make dependencies and save this on server.
+# README
 
-## v 0.1
-Now program can understand CRUD commands and give json answer on it without saving into database. It has layered arhitecture: controller, service, DAO (repository). Class Note contains id, title, content, createdAt, updatedAt.
+## Описание проекта
+
+Данный проект представляет собой REST API для сервиса заметок, разработанный с использованием Spring. На данный момент реализован базовый функционал без использования базы данных, который включает классические операции CRUD (Create, Read, Update, Delete).
+
+## Текущий функционал
+
+- **GET /notes** - Получение списка всех заметок
+- **GET /notes/{id}** - Получение заметки по ID
+- **GET /notes?title=** - Получение заметок по названию
+- **POST /notes/new_note** - Создание новой заметки
+- **PUT /notes/update_note** - Обновление существующей заметки
+- **DELETE /notes/delete_note/{id}** - Удаление заметки по ID
+
+## Планы на будущее
+
+- **Добавление изображений и файлов**: Реализовать возможность прикрепления изображений и других файлов к заметкам.
+- **Работа с Markdown**: Поддержка разметки Markdown для форматирования текста заметок.
+- **Передача заметок по ссылке**: Возможность делиться заметками с другими пользователями через уникальные ссылки.
+
+## Установка и запуск
+
+1. Клонируйте репозиторий:
+   ```bash
+   git clone https://github.com/iblochko/notes.git
+   cd notes
+   ```
+
+2. Убедитесь, что у вас установлен JDK (версия 11 или выше) и Maven.
+
+3. Соберите проект:
+   ```bash
+   mvn clean install
+   ```
+
+4. Запустите приложение:
+   ```bash
+   mvn spring-boot:run
+   ```
+
+## Использование
+
+После запуска приложения, API будет доступно по адресу `http://localhost:8080`. Вы можете отправлять HTTP-запросы с использованием Postman или curl для взаимодействия с сервисом заметок.
+
+### Примеры запросов
+
+- Получить все заметки:
+  ```bash
+  curl -X GET http://localhost:8080/notes
+  ```
+
+- Создать новую заметку:
+  ```bash
+  curl -X POST http://localhost:8080/notes/new_note -H "Content-Type: application/json" -d '{"title": "Заголовок", "content": "Содержимое заметки"}'
+  ```
+
+## Вклад
+
+Если вы хотите внести вклад в проект, пожалуйста, создайте форк репозитория и отправьте pull request с вашими изменениями.
+
+---
+
+Если у вас есть вопросы или предложения, пожалуйста, свяжитесь с нами через GitHub Issues.
