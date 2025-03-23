@@ -30,4 +30,5 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonBackReference
     private List<Tag> tags = new ArrayList<>();
+
 }

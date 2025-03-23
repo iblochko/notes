@@ -22,6 +22,8 @@ public class TagServiceImpl implements TagService {
     private final TagMapper tagMapper;
     private final UserRepository userRepository;
     private final NoteRepository noteRepository;
+    private final String tagNotFoundMessage = "Tag not found";
+    private final String userNotFoundMessage = "User not found";
 
 
     @Override
@@ -34,13 +36,14 @@ public class TagServiceImpl implements TagService {
     @Override
     public TagDto getTagById(Long id) {
         Tag tag = tagRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag not found"));
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
         return tagMapper.toDto(tag);
     }
 
     @Override
     public TagDto createTag(TagDto tagDto) {
-        User user = userRepository.findByUsername(tagDto.getUsername());
+        User user = userRepository.findByUsername(tagDto.getUsername()).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
         List<Note> notes;
         Tag savedTag;
         Tag tag = tagMapper.toEntity(tagDto);
@@ -66,7 +69,7 @@ public class TagServiceImpl implements TagService {
     @Override
     public TagDto updateTag(Long id, TagDto tagDto) {
         Tag existingTag = tagRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag not found"));
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
         List<Note> notes;
         Tag updatedTag;
         tagMapper.updateEntity(tagDto, existingTag);
@@ -89,7 +92,7 @@ public class TagServiceImpl implements TagService {
     @Override
     public void deleteTag(Long id) {
         Tag tag = tagRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag not found"));
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
         tagRepository.delete(tag);
     }
 }

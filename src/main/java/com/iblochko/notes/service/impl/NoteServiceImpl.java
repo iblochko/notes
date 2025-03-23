@@ -26,10 +26,13 @@ public class NoteServiceImpl implements NoteService {
     private final NoteMapper noteMapper;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
+    private final String noteNotFoundMessage = "Note not found";
+    private final String userNotFoundMessage = "User not found";
 
     @Override
     public NoteDto createNote(NoteDto noteDto) {
-        User user = userRepository.findByUsername(noteDto.getUsername());
+        User user = userRepository.findByUsername(noteDto.getUsername()).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
         List<Tag> tags;
         Note savedNote;
         Note note = noteMapper.toEntity(noteDto);
@@ -61,14 +64,14 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public NoteDto findNoteById(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(()
-                        -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Note not found"));
+                        -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
         return noteMapper.toDto(note);
     }
 
     @Override
     public NoteDto updateNote(Long id, NoteDto noteDto) {
         Note existingNote = noteRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Note not found"));
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
         List<Tag> tags;
         Note updatedNote;
         noteMapper.updateEntity(noteDto, existingNote);
@@ -92,7 +95,7 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     public void deleteNote(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Note not found"));
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
 
         List<Tag> tags = note.getTags();
 

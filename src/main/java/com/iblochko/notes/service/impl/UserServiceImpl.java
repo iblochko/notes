@@ -8,10 +8,11 @@ import com.iblochko.notes.repository.TagRepository;
 import com.iblochko.notes.repository.UserRepository;
 import com.iblochko.notes.service.UserService;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @AllArgsConstructor
@@ -21,17 +22,19 @@ public class UserServiceImpl implements UserService {
     private final NoteRepository noteRepository;
     private final TagRepository tagRepository;
     private final UserMapper userMapper;
+    private final String userNotFoundMessage = "User not found";
 
     @Override
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(userMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public UserDto getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
         return userMapper.toDto(user);
     }
 
@@ -44,7 +47,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto updateUser(String username, UserDto userDto) {
-        User existingUser = userRepository.findByUsername(username);
+        User existingUser = userRepository.findByUsername(username).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
 
         userMapper.updateEntity(userDto, existingUser);
         User updatedUser = userRepository.save(existingUser);
@@ -53,7 +57,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(String username) {
-        User user = userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
 
         // Удаляем связанные заметки и теги, если нужно
         noteRepository.deleteAll(user.getNotes());
