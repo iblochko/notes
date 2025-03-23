@@ -1,13 +1,16 @@
 package com.iblochko.notes.service;
 
-import com.iblochko.notes.model.User;
+import com.iblochko.notes.dto.UserDto;
+import java.util.List;
 
 public interface UserService {
-    User saveUser(User user);
+    UserDto getUserByUsername(String username);
 
-    User getUser(String username);
+    List<UserDto> getAllUsers();
 
-    User updateUser(User user);
+    UserDto createUser(UserDto userDto);
+
+    UserDto updateUser(String username, UserDto userDto);
 
     void deleteUser(String username);
 }

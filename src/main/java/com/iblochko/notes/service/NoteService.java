@@ -1,16 +1,16 @@
 package com.iblochko.notes.service;
 
-import com.iblochko.notes.model.Note;
+import com.iblochko.notes.dto.NoteDto;
 import java.util.List;
 
 public interface NoteService {
-    Note saveNote(Note note);
+    NoteDto createNote(NoteDto noteDto);
 
-    List<Note> findNoteByTitle(String title);
+    List<NoteDto> findNoteByTitle(String title);
 
-    Note findNoteById(long id);
+    NoteDto findNoteById(Long id);
 
-    Note updateNote(Note note);
+    NoteDto updateNote(Long id, NoteDto noteDto);
 
-    void deleteNote(long id);
+    void deleteNote(Long id);
 }
