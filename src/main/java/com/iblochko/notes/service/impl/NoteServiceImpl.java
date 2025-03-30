@@ -56,16 +56,15 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<NoteDto> findNoteByTitle(String title) {
+    public List<Note> findNoteByTitle(String title) {
         return noteRepository.findByTitleContaining(title).stream()
-                .map(noteMapper::toDto).toList();
+                .toList();
     }
 
     @Override
-    public NoteDto findNoteById(Long id) {
-        Note note = noteRepository.findById(id).orElseThrow(()
+    public Note findNoteById(Long id) {
+        return noteRepository.findById(id).orElseThrow(()
                         -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
-        return noteMapper.toDto(note);
     }
 
     @Override

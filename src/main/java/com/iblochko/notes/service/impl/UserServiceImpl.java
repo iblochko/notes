@@ -25,17 +25,15 @@ public class UserServiceImpl implements UserService {
     private final String userNotFoundMessage = "User not found";
 
     @Override
-    public List<UserDto> getAllUsers() {
+    public List<User> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(userMapper::toDto)
                 .toList();
     }
 
     @Override
-    public UserDto getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username).orElseThrow(()
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow(()
                 -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
-        return userMapper.toDto(user);
     }
 
     @Override

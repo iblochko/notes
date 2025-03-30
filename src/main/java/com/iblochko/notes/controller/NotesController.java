@@ -1,6 +1,7 @@
 package com.iblochko.notes.controller;
 
 import com.iblochko.notes.dto.NoteDto;
+import com.iblochko.notes.model.Note;
 import com.iblochko.notes.service.NoteService;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -26,15 +27,15 @@ public class NotesController {
     private final NoteService noteService;
 
     @GetMapping
-    public ResponseEntity<List<NoteDto>>
+    public ResponseEntity<List<Note>>
         findNoteByTitle(@RequestParam(required = false) String title) {
-        List<NoteDto> notes = noteService.findNoteByTitle(title);
+        List<Note> notes = noteService.findNoteByTitle(title);
         return new ResponseEntity<>(notes, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<NoteDto> findNoteById(@PathVariable Long id) {
-        NoteDto note = noteService.findNoteById(id);
+    public ResponseEntity<Note> findNoteById(@PathVariable Long id) {
+        Note note = noteService.findNoteById(id);
         return new ResponseEntity<>(note, HttpStatus.OK);
     }
 

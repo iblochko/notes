@@ -27,17 +27,15 @@ public class TagServiceImpl implements TagService {
 
 
     @Override
-    public List<TagDto> getAllTags() {
+    public List<Tag> getAllTags() {
         return tagRepository.findAll().stream()
-                .map(tagMapper::toDto)
                 .toList();
     }
 
     @Override
-    public TagDto getTagById(Long id) {
-        Tag tag = tagRepository.findById(id).orElseThrow(()
+    public Tag getTagById(Long id) {
+        return tagRepository.findById(id).orElseThrow(()
                 -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
-        return tagMapper.toDto(tag);
     }
 
     @Override

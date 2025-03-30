@@ -1,6 +1,7 @@
 package com.iblochko.notes.controller;
 
 import com.iblochko.notes.dto.UserDto;
+import com.iblochko.notes.model.User;
 import com.iblochko.notes.service.UserService;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -23,14 +24,14 @@ public class UsersController {
     private final UserService userService;
 
     @GetMapping("/all")
-    public ResponseEntity<List<UserDto>> getAllUsers() {
-        List<UserDto> users = userService.getAllUsers();
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
     @GetMapping("/{username}")
-    public ResponseEntity<UserDto> findUserByUsername(@PathVariable String username) {
-        UserDto user =  userService.getUserByUsername(username);
+    public ResponseEntity<User> findUserByUsername(@PathVariable String username) {
+        User user =  userService.getUserByUsername(username);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
@@ -43,8 +44,8 @@ public class UsersController {
     @PutMapping("/{username}")
     public ResponseEntity<UserDto> updateUser(@RequestBody UserDto userDto,
                                               @PathVariable String username) {
-        UserDto updatedOrder = userService.updateUser(username, userDto);
-        return new ResponseEntity<>(updatedOrder, HttpStatus.OK);
+        UserDto updatedUser = userService.updateUser(username, userDto);
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
 
     @DeleteMapping("/{username}")

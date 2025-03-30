@@ -1,6 +1,7 @@
 package com.iblochko.notes.controller;
 
 import com.iblochko.notes.dto.TagDto;
+import com.iblochko.notes.model.Tag;
 import com.iblochko.notes.service.TagService;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -23,14 +24,14 @@ public class TagsController {
     private final TagService tagService;
 
     @GetMapping("/all")
-    public ResponseEntity<List<TagDto>> getAllTags() {
-        List<TagDto> tags = tagService.getAllTags();
+    public ResponseEntity<List<Tag>> getAllTags() {
+        List<Tag> tags = tagService.getAllTags();
         return new ResponseEntity<>(tags, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TagDto> getTagById(@PathVariable Long id) {
-        TagDto tag = tagService.getTagById(id);
+    public ResponseEntity<Tag> getTagById(@PathVariable Long id) {
+        Tag tag = tagService.getTagById(id);
         return new ResponseEntity<>(tag, HttpStatus.OK);
     }
 
