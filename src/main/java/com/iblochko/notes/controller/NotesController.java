@@ -39,6 +39,20 @@ public class NotesController {
         return new ResponseEntity<>(note, HttpStatus.OK);
     }
 
+    @GetMapping("/tagName")
+    public ResponseEntity<List<Note>>
+        findNoteByTagName(@RequestParam(required = false) String tagName) {
+        List<Note> notes = noteService.findNoteByTagName(tagName);
+        return new ResponseEntity<>(notes, HttpStatus.OK);
+    }
+
+    @GetMapping("/username")
+    public ResponseEntity<List<Note>>
+        findNoteByUsername(@RequestParam(required = false) String username) {
+        List<Note> notes = noteService.findNoteByUsername(username);
+        return new ResponseEntity<>(notes, HttpStatus.OK);
+    }
+
     @PostMapping
     public ResponseEntity<NoteDto> createNote(@RequestBody NoteDto noteDto) {
         NoteDto createdNote = noteService.createNote(noteDto);

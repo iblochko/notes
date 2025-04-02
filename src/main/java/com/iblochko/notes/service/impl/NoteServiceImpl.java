@@ -68,6 +68,18 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    public List<Note> findNoteByTagName(String tagName) {
+        return noteRepository.findByTagName(tagName).stream()
+                .toList();
+    }
+
+    @Override
+    public List<Note> findNoteByUsername(String username) {
+        return noteRepository.findByUsername(username).stream()
+                .toList();
+    }
+
+    @Override
     public NoteDto updateNote(Long id, NoteDto noteDto) {
         Note existingNote = noteRepository.findById(id).orElseThrow(()
                 -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));

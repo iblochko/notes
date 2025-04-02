@@ -11,6 +11,10 @@ public interface NoteService {
 
     Note findNoteById(Long id);
 
+    List<Note> findNoteByTagName(String tagName);
+
+    List<Note> findNoteByUsername(String username);
+
     NoteDto updateNote(Long id, NoteDto noteDto);
 
     void deleteNote(Long id);
