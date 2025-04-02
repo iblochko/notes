@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(username).orElseThrow(()
                 -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
 
-        // Удаляем связанные заметки и теги, если нужно
+
         noteRepository.deleteAll(user.getNotes());
         tagRepository.deleteAll(user.getTags());
 

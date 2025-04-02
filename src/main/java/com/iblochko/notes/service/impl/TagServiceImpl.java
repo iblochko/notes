@@ -91,6 +91,12 @@ public class TagServiceImpl implements TagService {
     public void deleteTag(Long id) {
         Tag tag = tagRepository.findById(id).orElseThrow(()
                 -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
+
+        List<Note> notes = tag.getNotes();
+
+        for (Note note : notes) {
+            note.getTags().remove(tag);
+        }
         tagRepository.delete(tag);
     }
 }
