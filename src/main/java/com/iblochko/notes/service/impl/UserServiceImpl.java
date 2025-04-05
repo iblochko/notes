@@ -7,6 +7,7 @@ import com.iblochko.notes.repository.NoteRepository;
 import com.iblochko.notes.repository.TagRepository;
 import com.iblochko.notes.repository.UserRepository;
 import com.iblochko.notes.service.UserService;
+import com.iblochko.notes.util.CacheUtil;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
@@ -22,6 +23,7 @@ public class UserServiceImpl implements UserService {
     private final NoteRepository noteRepository;
     private final TagRepository tagRepository;
     private final UserMapper userMapper;
+    private final CacheUtil cacheUtil;
     private final String userNotFoundMessage = "User not found";
 
     @Override
@@ -32,14 +34,27 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserByUsername(String username) {
-        return userRepository.findByUsername(username).orElseThrow(()
+        String cacheKey = "user_" + username;
+
+        User cachedUser = cacheUtil.get(cacheKey, User.class);
+        if (cachedUser != null) {
+            return cachedUser;
+        }
+
+        User user = userRepository.findByUsername(username).orElseThrow(()
                 -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
+        if (user != null) {
+            cacheUtil.put(cacheKey, user);
+            return user;
+        }
+        return null;
     }
 
     @Override
     public UserDto createUser(UserDto userDto) {
         User user = userMapper.toEntity(userDto);
         User savedUser = userRepository.save(user);
+        cacheUtil.evict("user_" + savedUser.getUsername());
         return userMapper.toDto(savedUser);
     }
 
@@ -50,6 +65,7 @@ public class UserServiceImpl implements UserService {
 
         userMapper.updateEntity(userDto, existingUser);
         User updatedUser = userRepository.save(existingUser);
+        cacheUtil.evict("user_" + username);
         return userMapper.toDto(updatedUser);
     }
 
@@ -61,6 +77,8 @@ public class UserServiceImpl implements UserService {
 
         noteRepository.deleteAll(user.getNotes());
         tagRepository.deleteAll(user.getTags());
+
+        cacheUtil.evict("user_" + username);
 
         userRepository.delete(user);
     }

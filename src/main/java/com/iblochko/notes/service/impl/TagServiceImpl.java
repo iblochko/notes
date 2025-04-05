@@ -9,6 +9,7 @@ import com.iblochko.notes.repository.NoteRepository;
 import com.iblochko.notes.repository.TagRepository;
 import com.iblochko.notes.repository.UserRepository;
 import com.iblochko.notes.service.TagService;
+import com.iblochko.notes.util.CacheUtil;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ public class TagServiceImpl implements TagService {
     private final TagMapper tagMapper;
     private final UserRepository userRepository;
     private final NoteRepository noteRepository;
+    private final CacheUtil cacheUtil;
     private final String tagNotFoundMessage = "Tag not found";
     private final String userNotFoundMessage = "User not found";
 
@@ -34,8 +36,20 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public Tag getTagById(Long id) {
-        return tagRepository.findById(id).orElseThrow(()
+        String cacheKey = "tag_" + id;
+
+        Tag cachedTag = cacheUtil.get(cacheKey, Tag.class);
+        if (cachedTag != null) {
+            return cachedTag;
+        }
+
+        Tag tag = tagRepository.findById(id).orElseThrow(()
                 -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
+        if (tag != null) {
+            cacheUtil.put(cacheKey, tag);
+            return tag;
+        }
+        return null;
     }
 
     @Override
@@ -61,6 +75,8 @@ public class TagServiceImpl implements TagService {
 
         user.getTags().add(savedTag);
 
+        cacheUtil.evict("tag_" + savedTag.getId());
+
         return tagMapper.toDto(savedTag);
     }
 
@@ -84,6 +100,8 @@ public class TagServiceImpl implements TagService {
             updatedTag = tagRepository.save(existingTag);
         }
 
+        cacheUtil.evict("tag_" + id);
+
         return tagMapper.toDto(updatedTag);
     }
 
@@ -97,6 +115,9 @@ public class TagServiceImpl implements TagService {
         for (Note note : notes) {
             note.getTags().remove(tag);
         }
+
+        cacheUtil.evict("tag_" + id);
+
         tagRepository.delete(tag);
     }
 }

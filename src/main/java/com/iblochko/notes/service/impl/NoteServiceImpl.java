@@ -9,6 +9,7 @@ import com.iblochko.notes.repository.NoteRepository;
 import com.iblochko.notes.repository.TagRepository;
 import com.iblochko.notes.repository.UserRepository;
 import com.iblochko.notes.service.NoteService;
+import com.iblochko.notes.util.CacheUtil;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,7 @@ public class NoteServiceImpl implements NoteService {
     private final NoteMapper noteMapper;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
+    private final CacheUtil cacheUtil;
     private final String noteNotFoundMessage = "Note not found";
     private final String userNotFoundMessage = "User not found";
 
@@ -52,6 +54,8 @@ public class NoteServiceImpl implements NoteService {
 
         user.getNotes().add(savedNote);
 
+        cacheUtil.evict("note_" + savedNote.getId());
+
         return noteMapper.toDto(savedNote);
     }
 
@@ -63,8 +67,20 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public Note findNoteById(Long id) {
-        return noteRepository.findById(id).orElseThrow(()
-                        -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
+        String cacheKey = "note_" + id;
+
+        Note cachedNote = cacheUtil.get(cacheKey, Note.class);
+        if (cachedNote != null) {
+            return cachedNote;
+        }
+
+        Note note = noteRepository.findById(id).orElseThrow(()
+                -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
+        if (note != null) {
+            cacheUtil.put(cacheKey, note);
+            return note;
+        }
+        return null;
     }
 
     @Override
@@ -99,6 +115,8 @@ public class NoteServiceImpl implements NoteService {
             updatedNote = noteRepository.save(existingNote);
         }
 
+        cacheUtil.evict("note_" + updatedNote.getId());
+
         return noteMapper.toDto(updatedNote);
     }
 
@@ -116,6 +134,8 @@ public class NoteServiceImpl implements NoteService {
 
         tagRepository.saveAll(tags);
         noteRepository.delete(note);
+
+        cacheUtil.evict("note_" + id);
     }
 
 
