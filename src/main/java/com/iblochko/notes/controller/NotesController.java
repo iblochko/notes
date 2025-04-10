@@ -1,6 +1,7 @@
 package com.iblochko.notes.controller;
 
 import com.iblochko.notes.dto.NoteDto;
+import com.iblochko.notes.exception.ResourceNotFoundException;
 import com.iblochko.notes.model.Note;
 import com.iblochko.notes.service.NoteService;
 import java.util.List;

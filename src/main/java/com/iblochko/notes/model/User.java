@@ -12,10 +12,12 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
+import lombok.ToString;
 
 @Data
 @Entity
 @Table(name = "users")
+@ToString
 public class User {
     @Id
     private String username;
@@ -30,6 +32,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonBackReference
+    @ToString.Exclude
     private List<Tag> tags = new ArrayList<>();
 
 }

@@ -13,11 +13,13 @@ import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
+import lombok.ToString;
 
 
 @Data
 @Entity
 @Table(name = "tags")
+@ToString
 public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,10 +30,12 @@ public class Tag {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonBackReference
+    @ToString.Exclude
     private User user;
 
     @ManyToMany(mappedBy = "tags")
     @JsonBackReference
+    @ToString.Exclude
     private List<Note> notes = new ArrayList<>();
 
 }

@@ -1,6 +1,8 @@
 package com.iblochko.notes.service.impl;
 
 import com.iblochko.notes.dto.TagDto;
+import com.iblochko.notes.exception.BadRequestException;
+import com.iblochko.notes.exception.ResourceNotFoundException;
 import com.iblochko.notes.mapper.TagMapper;
 import com.iblochko.notes.model.Note;
 import com.iblochko.notes.model.Tag;
@@ -44,7 +46,7 @@ public class TagServiceImpl implements TagService {
         }
 
         Tag tag = tagRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
+                -> new ResourceNotFoundException("Tag with id " + id + " not found"));
         if (tag != null) {
             cacheUtil.put(cacheKey, tag);
             return tag;
@@ -54,8 +56,12 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public TagDto createTag(TagDto tagDto) {
+        if (tagDto.getName() == null || tagDto.getName().trim().isEmpty()) {
+            throw new BadRequestException("Tag name cannot be empty");
+        }
         User user = userRepository.findByUsername(tagDto.getUsername()).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
+                -> new ResourceNotFoundException("User with name "
+                + tagDto.getUsername() + " not found"));
         List<Note> notes;
         Tag savedTag;
         Tag tag = tagMapper.toEntity(tagDto);
@@ -83,7 +89,12 @@ public class TagServiceImpl implements TagService {
     @Override
     public TagDto updateTag(Long id, TagDto tagDto) {
         Tag existingTag = tagRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
+                -> new ResourceNotFoundException("Tag with id " + id + " not found"));
+
+        if (tagDto.getName() == null || tagDto.getName().trim().isEmpty()) {
+            throw new BadRequestException("Tag name cannot be empty");
+        }
+
         List<Note> notes;
         Tag updatedTag;
         tagMapper.updateEntity(tagDto, existingTag);
@@ -108,7 +119,7 @@ public class TagServiceImpl implements TagService {
     @Override
     public void deleteTag(Long id) {
         Tag tag = tagRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, tagNotFoundMessage));
+                -> new ResourceNotFoundException("Tag with id " + id + " not found"));
 
         List<Note> notes = tag.getNotes();
 

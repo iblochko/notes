@@ -1,6 +1,8 @@
 package com.iblochko.notes.service.impl;
 
 import com.iblochko.notes.dto.UserDto;
+import com.iblochko.notes.exception.BadRequestException;
+import com.iblochko.notes.exception.ResourceNotFoundException;
 import com.iblochko.notes.mapper.UserMapper;
 import com.iblochko.notes.model.User;
 import com.iblochko.notes.repository.NoteRepository;
@@ -26,6 +28,18 @@ public class UserServiceImpl implements UserService {
     private final CacheUtil cacheUtil;
     private final String userNotFoundMessage = "User not found";
 
+    private void checkData(UserDto userDto) {
+        if (userDto.getUsername() == null || userDto.getUsername().isEmpty()) {
+            throw new BadRequestException("Username cannot be empty");
+        }
+        if (userDto.getEmail() == null || userDto.getEmail().isEmpty()) {
+            throw new BadRequestException("Email cannot be empty");
+        }
+        if (userDto.getPassword() == null || userDto.getPassword().isEmpty()) {
+            throw new BadRequestException("Password cannot be empty");
+        }
+    }
+
     @Override
     public List<User> getAllUsers() {
         return userRepository.findAll().stream()
@@ -42,7 +56,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = userRepository.findByUsername(username).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
+                -> new ResourceNotFoundException("User with name " + username + " not found"));
         if (user != null) {
             cacheUtil.put(cacheKey, user);
             return user;
@@ -52,6 +66,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto createUser(UserDto userDto) {
+        checkData(userDto);
         User user = userMapper.toEntity(userDto);
         User savedUser = userRepository.save(user);
         cacheUtil.evict("user_" + savedUser.getUsername());
@@ -61,7 +76,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto updateUser(String username, UserDto userDto) {
         User existingUser = userRepository.findByUsername(username).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
+                -> new ResourceNotFoundException("User with name " + username + " not found"));
+
+        checkData(userDto);
 
         userMapper.updateEntity(userDto, existingUser);
         User updatedUser = userRepository.save(existingUser);
@@ -72,7 +89,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(String username) {
         User user = userRepository.findByUsername(username).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
+                -> new ResourceNotFoundException("User with name " + username + " not found"));
 
 
         noteRepository.deleteAll(user.getNotes());

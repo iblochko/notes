@@ -1,6 +1,8 @@
 package com.iblochko.notes.service.impl;
 
 import com.iblochko.notes.dto.NoteDto;
+import com.iblochko.notes.exception.BadRequestException;
+import com.iblochko.notes.exception.ResourceNotFoundException;
 import com.iblochko.notes.mapper.NoteMapper;
 import com.iblochko.notes.model.Note;
 import com.iblochko.notes.model.Tag;
@@ -33,8 +35,12 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public NoteDto createNote(NoteDto noteDto) {
+        if (noteDto.getTitle() == null || noteDto.getTitle().trim().isEmpty()) {
+            throw new BadRequestException("Note title cannot be empty");
+        }
         User user = userRepository.findByUsername(noteDto.getUsername()).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, userNotFoundMessage));
+                -> new ResourceNotFoundException("User with name "
+                + noteDto.getUsername() + " not found"));
         List<Tag> tags;
         Note savedNote;
         Note note = noteMapper.toEntity(noteDto);
@@ -74,8 +80,9 @@ public class NoteServiceImpl implements NoteService {
             return cachedNote;
         }
 
-        Note note = noteRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Note with id " + id + " not found"));
         if (note != null) {
             cacheUtil.put(cacheKey, note);
             return note;
@@ -98,7 +105,12 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public NoteDto updateNote(Long id, NoteDto noteDto) {
         Note existingNote = noteRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
+                -> new ResourceNotFoundException("Note with id " + id + " not found"));
+
+        if (noteDto.getTitle() == null || noteDto.getTitle().trim().isEmpty()) {
+            throw new BadRequestException("Note title cannot be empty");
+        }
+
         List<Tag> tags;
         Note updatedNote;
         noteMapper.updateEntity(noteDto, existingNote);
@@ -124,7 +136,7 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     public void deleteNote(Long id) {
         Note note = noteRepository.findById(id).orElseThrow(()
-                -> new ResponseStatusException(HttpStatus.NOT_FOUND, noteNotFoundMessage));
+                -> new ResourceNotFoundException("Note with id " + id + " not found"));
 
         List<Tag> tags = note.getTags();
 
