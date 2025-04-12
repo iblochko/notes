@@ -13,12 +13,12 @@ import com.iblochko.notes.repository.UserRepository;
 import com.iblochko.notes.service.NoteService;
 import com.iblochko.notes.util.CacheUtil;
 import jakarta.transaction.Transactional;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 
 @Service
@@ -30,24 +30,35 @@ public class NoteServiceImpl implements NoteService {
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
     private final CacheUtil cacheUtil;
-    private final String noteNotFoundMessage = "Note not found";
-    private final String userNotFoundMessage = "User not found";
 
     @Override
     public NoteDto createNote(NoteDto noteDto) {
         if (noteDto.getTitle() == null || noteDto.getTitle().trim().isEmpty()) {
             throw new BadRequestException("Note title cannot be empty");
         }
+        if (noteDto.getUsername() == null || noteDto.getUsername().trim().isEmpty()) {
+            throw new BadRequestException("Username cannot be empty");
+        }
         User user = userRepository.findByUsername(noteDto.getUsername()).orElseThrow(()
                 -> new ResourceNotFoundException("User with name "
                 + noteDto.getUsername() + " not found"));
-        List<Tag> tags;
+        List<Tag> tags = new ArrayList<>();
         Note savedNote;
         Note note = noteMapper.toEntity(noteDto);
         note.setUser(user);
 
         if (noteDto.getTagIds() != null) {
-            tags = tagRepository.findAllById(noteDto.getTagIds());
+            Set<Long> tagIds = noteDto.getTagIds();
+            for (Long tagId : tagIds) {
+                tags.add(tagRepository.findById(tagId).orElseThrow(() ->
+                        new ResourceNotFoundException("Tag with id " + tagId + " not found")));
+            }
+            for (Tag tag : tags) {
+                if (tag.getUser() == note.getUser()) {
+                    continue;
+                }
+                throw new ResourceNotFoundException("Tag with id " + tag.getId() + " not found");
+            }
             note.getTags().addAll(tags);
             savedNote = noteRepository.save(note);
             for (Tag tag : tags) {
@@ -92,12 +103,16 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public List<Note> findNoteByTagName(String tagName) {
+        tagRepository.findByName(tagName).orElseThrow(() ->
+                new ResourceNotFoundException("Tag with name " + tagName + " not found"));
         return noteRepository.findByTagName(tagName).stream()
                 .toList();
     }
 
     @Override
     public List<Note> findNoteByUsername(String username) {
+        userRepository.findByUsername(username).orElseThrow(() ->
+                new ResourceNotFoundException("User with name " + username + " not found"));
         return noteRepository.findByUsername(username).stream()
                 .toList();
     }
@@ -111,11 +126,14 @@ public class NoteServiceImpl implements NoteService {
             throw new BadRequestException("Note title cannot be empty");
         }
 
-        List<Tag> tags;
+        List<Tag> tags = new ArrayList<>();
         Note updatedNote;
         noteMapper.updateEntity(noteDto, existingNote);
         if (noteDto.getTagIds() != null) {
-            tags = tagRepository.findAllById(noteDto.getTagIds());
+            for (Long tagId : noteDto.getTagIds()) {
+                tags.add(tagRepository.findById(tagId).orElseThrow(() ->
+                        new ResourceNotFoundException("Tag with id " + tagId + " not found")));
+            }
             existingNote.getTags().clear();
             existingNote.getTags().addAll(tags);
             updatedNote = noteRepository.save(existingNote);

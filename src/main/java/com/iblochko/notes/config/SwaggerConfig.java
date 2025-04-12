@@ -3,7 +3,6 @@ package com.iblochko.notes.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI openApi() {
         return new OpenAPI()
                 .info(new Info()
                         .title("Notes Application API")
@@ -19,8 +18,6 @@ public class SwaggerConfig {
                         .version("1.0")
                         .contact(new Contact()
                                 .name("Daniil Tarashkevich")
-                                .email("danilatarashkevich@gmail.com"))
-                        .license(new License()
-                                .name("MIT License")));
+                                .email("danilatarashkevich@gmail.com")));
     }
 }

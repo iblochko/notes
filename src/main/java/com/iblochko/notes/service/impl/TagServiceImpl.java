@@ -12,11 +12,11 @@ import com.iblochko.notes.repository.TagRepository;
 import com.iblochko.notes.repository.UserRepository;
 import com.iblochko.notes.service.TagService;
 import com.iblochko.notes.util.CacheUtil;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @AllArgsConstructor
@@ -26,8 +26,6 @@ public class TagServiceImpl implements TagService {
     private final UserRepository userRepository;
     private final NoteRepository noteRepository;
     private final CacheUtil cacheUtil;
-    private final String tagNotFoundMessage = "Tag not found";
-    private final String userNotFoundMessage = "User not found";
 
 
     @Override
@@ -59,16 +57,31 @@ public class TagServiceImpl implements TagService {
         if (tagDto.getName() == null || tagDto.getName().trim().isEmpty()) {
             throw new BadRequestException("Tag name cannot be empty");
         }
+        if (tagDto.getUsername() == null || tagDto.getUsername().trim().isEmpty()) {
+            throw new BadRequestException("Username cannot be empty");
+        }
         User user = userRepository.findByUsername(tagDto.getUsername()).orElseThrow(()
                 -> new ResourceNotFoundException("User with name "
                 + tagDto.getUsername() + " not found"));
-        List<Note> notes;
+        List<Note> notes = new ArrayList<>();
         Tag savedTag;
         Tag tag = tagMapper.toEntity(tagDto);
         tag.setUser(user);
 
         if (tagDto.getNoteIds() != null) {
-            notes = noteRepository.findAllById(tagDto.getNoteIds());
+            Set<Long> noteIds = tagDto.getNoteIds();
+            for (Long noteId : noteIds) {
+                notes.add(noteRepository.findById(noteId).orElseThrow(()
+                        -> new ResourceNotFoundException("Note with id " + noteId + " not found")
+                ));
+            }
+
+            for (Note note : notes) {
+                if (note.getUser() == tag.getUser()) {
+                    continue;
+                }
+                throw new ResourceNotFoundException("Note with id " + note.getId() + " not found");
+            }
             tag.getNotes().addAll(notes);
             savedTag = tagRepository.save(tag);
             for (Note note : notes) {
@@ -95,11 +108,14 @@ public class TagServiceImpl implements TagService {
             throw new BadRequestException("Tag name cannot be empty");
         }
 
-        List<Note> notes;
+        List<Note> notes = new ArrayList<>();
         Tag updatedTag;
         tagMapper.updateEntity(tagDto, existingTag);
         if (tagDto.getNoteIds() != null) {
-            notes = noteRepository.findAllById(tagDto.getNoteIds());
+            for  (Long noteId : tagDto.getNoteIds()) {
+                notes.add(noteRepository.findById(noteId).orElseThrow(()
+                        -> new ResourceNotFoundException("Note with id " + noteId + " not found")));
+            }
             existingTag.getNotes().clear();
             existingTag.getNotes().addAll(notes);
             updatedTag = tagRepository.save(existingTag);

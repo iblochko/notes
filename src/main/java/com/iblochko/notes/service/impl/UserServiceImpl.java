@@ -13,9 +13,7 @@ import com.iblochko.notes.util.CacheUtil;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @AllArgsConstructor
@@ -26,7 +24,6 @@ public class UserServiceImpl implements UserService {
     private final TagRepository tagRepository;
     private final UserMapper userMapper;
     private final CacheUtil cacheUtil;
-    private final String userNotFoundMessage = "User not found";
 
     private void checkData(UserDto userDto) {
         if (userDto.getUsername() == null || userDto.getUsername().isEmpty()) {

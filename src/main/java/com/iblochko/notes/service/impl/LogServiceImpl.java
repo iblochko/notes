@@ -1,9 +1,6 @@
 package com.iblochko.notes.service.impl;
 
 import com.iblochko.notes.service.LogService;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -14,7 +11,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
 
 @Service
 public class LogServiceImpl implements LogService {
@@ -44,6 +43,6 @@ public class LogServiceImpl implements LogService {
         if (matchingLines.isEmpty()) {
             return "No logs found for date: " + dateString;
         }
-        return matchingLines.stream().collect(Collectors.joining("\n"));
+        return String.join("\n", matchingLines);
     }
 }

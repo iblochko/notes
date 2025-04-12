@@ -1,9 +1,12 @@
 package com.iblochko.notes.controller;
 
 import com.iblochko.notes.dto.NoteDto;
-import com.iblochko.notes.exception.ResourceNotFoundException;
 import com.iblochko.notes.model.Note;
 import com.iblochko.notes.service.NoteService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,11 +26,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/notes")
 @AllArgsConstructor
+@Tag(name = "Notes", description = "API for managing notes")
 public class NotesController {
 
     private final NoteService noteService;
 
+
     @GetMapping
+    @Operation(summary = "Get notes by title containing",
+            description =
+                    "Returns a list of all notes that contains title for the authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+    })
     public ResponseEntity<List<Note>>
         findNoteByTitle(@RequestParam(required = false) String title) {
         List<Note> notes = noteService.findNoteByTitle(title);
@@ -35,12 +46,24 @@ public class NotesController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get note by id",
+            description =
+                    "Returns a note with id for the authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved note")
+    })
     public ResponseEntity<Note> findNoteById(@PathVariable Long id) {
         Note note = noteService.findNoteById(id);
         return new ResponseEntity<>(note, HttpStatus.OK);
     }
 
     @GetMapping("/tagName")
+    @Operation(summary = "Get notes by tag containing",
+            description =
+                    "Returns a list of all notes that contains tag for the authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+    })
     public ResponseEntity<List<Note>>
         findNoteByTagName(@RequestParam(required = false) String tagName) {
         List<Note> notes = noteService.findNoteByTagName(tagName);
@@ -48,6 +71,12 @@ public class NotesController {
     }
 
     @GetMapping("/username")
+    @Operation(summary = "Get notes by user containing",
+            description =
+                    "Returns a list of all notes that contains user for the authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+    })
     public ResponseEntity<List<Note>>
         findNoteByUsername(@RequestParam(required = false) String username) {
         List<Note> notes = noteService.findNoteByUsername(username);
@@ -55,6 +84,12 @@ public class NotesController {
     }
 
     @PostMapping
+    @Operation(summary = "Post new note",
+            description =
+                    "Returns a list of all notes that contains title for the authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+    })
     public ResponseEntity<NoteDto> createNote(@RequestBody NoteDto noteDto) {
         NoteDto createdNote = noteService.createNote(noteDto);
 
