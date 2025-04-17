@@ -4,6 +4,7 @@ import com.iblochko.notes.dto.NoteDto;
 import com.iblochko.notes.model.Note;
 import com.iblochko.notes.service.NoteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,12 +36,14 @@ public class NotesController {
     @GetMapping
     @Operation(summary = "Get notes by title containing",
             description =
-                    "Returns a list of all notes that contains title for the authenticated user")
+                    "Returns a list of all notes that contains title")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<List<Note>>
-        findNoteByTitle(@RequestParam(required = false) String title) {
+        findNoteByTitle(@Parameter(description = "Note title or part of it", required = true)
+                        @RequestParam(required = false) String title) {
         List<Note> notes = noteService.findNoteByTitle(title);
         return new ResponseEntity<>(notes, HttpStatus.OK);
     }
@@ -48,11 +51,14 @@ public class NotesController {
     @GetMapping("/{id}")
     @Operation(summary = "Get note by id",
             description =
-                    "Returns a note with id for the authenticated user")
+                    "Returns a note with entered id")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved note")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved note"),
+        @ApiResponse(responseCode = "404", description = "Note not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<Note> findNoteById(@PathVariable Long id) {
+    public ResponseEntity<Note> findNoteById(@Parameter(description = "Note id", required = true)
+                                             @PathVariable Long id) {
         Note note = noteService.findNoteById(id);
         return new ResponseEntity<>(note, HttpStatus.OK);
     }
@@ -60,12 +66,15 @@ public class NotesController {
     @GetMapping("/tagName")
     @Operation(summary = "Get notes by tag containing",
             description =
-                    "Returns a list of all notes that contains tag for the authenticated user")
+                    "Returns a list of all notes that contains tag")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes"),
+        @ApiResponse(responseCode = "404", description = "Tag not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<List<Note>>
-        findNoteByTagName(@RequestParam(required = false) String tagName) {
+        findNoteByTagName(@Parameter(description = "Name of tag", required = true)
+                          @RequestParam(required = false) String tagName) {
         List<Note> notes = noteService.findNoteByTagName(tagName);
         return new ResponseEntity<>(notes, HttpStatus.OK);
     }
@@ -73,12 +82,15 @@ public class NotesController {
     @GetMapping("/username")
     @Operation(summary = "Get notes by user containing",
             description =
-                    "Returns a list of all notes that contains user for the authenticated user")
+                    "Returns a list of all notes that contains user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes"),
+        @ApiResponse(responseCode = "404", description = "User not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<List<Note>>
-        findNoteByUsername(@RequestParam(required = false) String username) {
+        findNoteByUsername(@Parameter(description = "Username", required = true)
+                           @RequestParam(required = false) String username) {
         List<Note> notes = noteService.findNoteByUsername(username);
         return new ResponseEntity<>(notes, HttpStatus.OK);
     }
@@ -86,9 +98,12 @@ public class NotesController {
     @PostMapping
     @Operation(summary = "Post new note",
             description =
-                    "Returns a list of all notes that contains title for the authenticated user")
+                    "Create new note and save it to database")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved notes")
+        @ApiResponse(responseCode = "201", description = "Successfully created note"),
+        @ApiResponse(responseCode = "400", description = "Bad request"),
+        @ApiResponse(responseCode = "404", description = "Resource not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<NoteDto> createNote(@RequestBody NoteDto noteDto) {
         NoteDto createdNote = noteService.createNote(noteDto);
@@ -97,12 +112,30 @@ public class NotesController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<NoteDto> updateNote(@PathVariable Long id, @RequestBody NoteDto noteDto) {
+    @Operation(summary = "Put note",
+            description =
+                    "Update note and save changes to database")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully updated note"),
+        @ApiResponse(responseCode = "400", description = "Bad request"),
+        @ApiResponse(responseCode = "404", description = "Note not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<NoteDto> updateNote(@Parameter(description = "Note id", required = true)
+                                              @PathVariable Long id, @RequestBody NoteDto noteDto) {
         NoteDto updatedNote = noteService.updateNote(id, noteDto);
         return new ResponseEntity<>(updatedNote, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete note",
+            description =
+                    "Delete note from database")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Successfully deleted note"),
+        @ApiResponse(responseCode = "404", description = "Note not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public ResponseEntity<Void> deleteNote(@PathVariable long id) {
         noteService.deleteNote(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
