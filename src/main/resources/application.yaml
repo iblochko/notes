@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/notes
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password:
+    password: admin
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -13,9 +13,7 @@ spring:
       hibernate:
         format-sql: true
 logging:
-  file.name: application.log
-  level.com.iblochko.notes: INFO
-  pattern.file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file.name: logs/notes-app.log
 springdoc:
   api-docs:
     path: /api-docs
