@@ -18,4 +18,6 @@ public interface NoteService {
     NoteDto updateNote(Long id, NoteDto noteDto);
 
     void deleteNote(Long id);
+
+    List<Note> createBulkNotes(List<Note> notes);
 }

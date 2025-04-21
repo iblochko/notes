@@ -13,9 +13,11 @@ import com.iblochko.notes.repository.UserRepository;
 import com.iblochko.notes.service.NoteService;
 import com.iblochko.notes.util.CacheUtil;
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -74,6 +76,33 @@ public class NoteServiceImpl implements NoteService {
         cacheUtil.evict("note_" + savedNote.getId());
 
         return noteMapper.toDto(savedNote);
+    }
+
+    @Override
+    public List<Note> createBulkNotes(List<Note> notes) {
+        if (notes == null || notes.isEmpty()) {
+            throw new BadRequestException("Список заметок не может быть пустым");
+        }
+
+        // Валидация заметок с использованием Stream API
+        boolean hasInvalidNotes = notes.stream()
+                .anyMatch(note -> note.getTitle() == null || note.getTitle().trim().isEmpty());
+
+        if (hasInvalidNotes) {
+            throw new BadRequestException("Все заметки должны иметь заголовок");
+        }
+
+        // Установка времени создания/обновления для всех заметок
+        LocalDateTime now = LocalDateTime.now();
+        List<Note> preparedNotes = notes.stream()
+                .peek(note -> {
+                    note.setCreatedAt(now);
+                    note.setUpdatedAt(now);
+                })
+                .collect(Collectors.toList());
+
+        // Сохранение всех заметок
+        return noteRepository.saveAll(preparedNotes);
     }
 
     @Override

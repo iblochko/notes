@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -109,6 +110,18 @@ public class NotesController {
         NoteDto createdNote = noteService.createNote(noteDto);
 
         return new ResponseEntity<>(createdNote, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/bulk")
+    @Operation(summary = "Создать несколько заметок",
+            description = "Создает несколько заметок одним запросом")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Заметки успешно созданы"),
+        @ApiResponse(responseCode = "400", description = "Некорректные данные в запросе")
+    })
+    public ResponseEntity<List<Note>> createNotes(@Valid @RequestBody List<Note> notes) {
+        List<Note> createdNotes = noteService.createBulkNotes(notes);
+        return new ResponseEntity<>(createdNotes, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
