@@ -136,8 +136,16 @@ class NoteServiceImplTest {
     @Test
     void createNote_TagNotFound_ThrowsResourceNotFoundException() {
         // Arrange
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
-        when(tagRepository.findById(anyLong())).thenReturn(Optional.empty());
+        // Используем HashSet вместо Collections.singletonList
+        Set<Long> tagIds = new HashSet<>();
+        tagIds.add(1L);
+        testNoteDto.setTagIds(tagIds);
+
+        // Убедитесь, что testNoteDto содержит имя пользователя
+        testNoteDto.setUsername("testuser");
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(tagRepository.findById(1L)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.createNote(testNoteDto));

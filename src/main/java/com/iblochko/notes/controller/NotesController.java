@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,11 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 @SuppressWarnings("checkstyle:MissingJavadocType")
 @RestController
 @RequestMapping("/notes")
-@AllArgsConstructor
 @Tag(name = "Notes", description = "API for managing notes")
 public class NotesController {
 
     private final NoteService noteService;
+
+    public NotesController(NoteService noteService) {
+        this.noteService = noteService;
+    }
 
 
     @GetMapping
