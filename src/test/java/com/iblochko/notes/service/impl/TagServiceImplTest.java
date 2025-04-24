@@ -84,14 +84,14 @@ class TagServiceImplTest {
 
     @Test
     void getAllTags_Success() {
-        // Arrange
+
         List<Tag> tags = List.of(testTag);
         when(tagRepository.findAll()).thenReturn(tags);
 
-        // Act
+
         List<Tag> result = tagService.getAllTags();
 
-        // Assert
+
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("testTag", result.get(0).getName());
@@ -99,13 +99,13 @@ class TagServiceImplTest {
 
     @Test
     void getTagById_FromCache_Success() {
-        // Arrange
+
         when(cacheUtil.get(anyString(), eq(Tag.class))).thenReturn(testTag);
 
-        // Act
+
         Tag result = tagService.getTagById(1L);
 
-        // Assert
+
         assertNotNull(result);
         assertEquals(testTag.getId(), result.getId());
         verify(tagRepository, never()).findById(anyLong());
@@ -113,14 +113,14 @@ class TagServiceImplTest {
 
     @Test
     void getTagById_FromRepository_Success() {
-        // Arrange
+
         when(cacheUtil.get(anyString(), eq(Tag.class))).thenReturn(null);
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
 
-        // Act
+
         Tag result = tagService.getTagById(1L);
 
-        // Assert
+
         assertNotNull(result);
         assertEquals(testTag.getId(), result.getId());
         verify(tagRepository).findById(anyLong());
@@ -129,27 +129,27 @@ class TagServiceImplTest {
 
     @Test
     void getTagById_NotFound_ThrowsResourceNotFoundException() {
-        // Arrange
+
         when(cacheUtil.get(anyString(), eq(Tag.class))).thenReturn(null);
         when(tagRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
+
         assertThrows(ResourceNotFoundException.class, () -> tagService.getTagById(1L));
     }
 
     @Test
     void createTag_Success() {
-        // Arrange
+
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(testNote));
         when(tagMapper.toEntity(any(TagDto.class))).thenReturn(testTag);
         when(tagRepository.save(any(Tag.class))).thenReturn(testTag);
         when(tagMapper.toDto(any(Tag.class))).thenReturn(testTagDto);
 
-        // Act
+
         TagDto result = tagService.createTag(testTagDto);
 
-        // Assert
+
         assertNotNull(result);
         assertEquals(testTagDto.getName(), result.getName());
         verify(tagRepository).save(any(Tag.class));
@@ -159,56 +159,53 @@ class TagServiceImplTest {
 
     @Test
     void createTag_EmptyName_ThrowsBadRequestException() {
-        // Arrange
+
         testTagDto.setName("");
 
-        // Act & Assert
+
         assertThrows(BadRequestException.class, () -> tagService.createTag(testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void createTag_EmptyUsername_ThrowsBadRequestException() {
-        // Arrange
+
         testTagDto.setUsername("");
 
-        // Act & Assert
+
         assertThrows(BadRequestException.class, () -> tagService.createTag(testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void createTag_UserNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
+
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
 
-        // Act & Assert
+
         assertThrows(ResourceNotFoundException.class, () -> tagService.createTag(testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void createTag_NoteNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
-        // Используем HashSet вместо Collections.singletonList
         Set<Long> noteIds = new HashSet<>();
         noteIds.add(1L);
         testTagDto.setNoteIds(noteIds);
 
-        // Убедитесь, что testTagDto содержит имя пользователя
+
         testTagDto.setUsername("testuser");
 
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(noteRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // Act & Assert
+
         assertThrows(ResourceNotFoundException.class, () -> tagService.createTag(testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void createTag_NoteBelongsToAnotherUser_ThrowsResourceNotFoundException() {
-        // Arrange
+
         User anotherUser = new User();
         anotherUser.setUsername("anotherUser");
 
@@ -220,24 +217,24 @@ class TagServiceImplTest {
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(noteFromAnotherUser));
         when(tagMapper.toEntity(any(TagDto.class))).thenReturn(testTag);
 
-        // Act & Assert
+
         assertThrows(ResourceNotFoundException.class, () -> tagService.createTag(testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void createTag_WithoutNotes_Success() {
-        // Arrange
+
         testTagDto.setNoteIds(null);
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
         when(tagMapper.toEntity(any(TagDto.class))).thenReturn(testTag);
         when(tagRepository.save(any(Tag.class))).thenReturn(testTag);
         when(tagMapper.toDto(any(Tag.class))).thenReturn(testTagDto);
 
-        // Act
+
         TagDto result = tagService.createTag(testTagDto);
 
-        // Assert
+
         assertNotNull(result);
         verify(tagRepository).save(any(Tag.class));
         verify(noteRepository, never()).save(any(Note.class));
@@ -246,16 +243,16 @@ class TagServiceImplTest {
 
     @Test
     void updateTag_Success() {
-        // Arrange
+
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(testNote));
         when(tagRepository.save(any(Tag.class))).thenReturn(testTag);
         when(tagMapper.toDto(any(Tag.class))).thenReturn(testTagDto);
 
-        // Act
+
         TagDto result = tagService.updateTag(1L, testTagDto);
 
-        // Assert
+
         assertNotNull(result);
         verify(tagRepository).save(any(Tag.class));
         verify(noteRepository).save(any(Note.class));
@@ -264,48 +261,48 @@ class TagServiceImplTest {
 
     @Test
     void updateTag_TagNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
+
         when(tagRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
+
         assertThrows(ResourceNotFoundException.class, () -> tagService.updateTag(1L, testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void updateTag_EmptyName_ThrowsBadRequestException() {
-        // Arrange
+
         testTagDto.setName("");
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
 
-        // Act & Assert
+
         assertThrows(BadRequestException.class, () -> tagService.updateTag(1L, testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void updateTag_NoteNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
+
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
         when(noteRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
+
         assertThrows(ResourceNotFoundException.class, () -> tagService.updateTag(1L, testTagDto));
         verify(tagRepository, never()).save(any(Tag.class));
     }
 
     @Test
     void updateTag_WithoutNotes_Success() {
-        // Arrange
+
         testTagDto.setNoteIds(null);
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
         when(tagRepository.save(any(Tag.class))).thenReturn(testTag);
         when(tagMapper.toDto(any(Tag.class))).thenReturn(testTagDto);
 
-        // Act
+
         TagDto result = tagService.updateTag(1L, testTagDto);
 
-        // Assert
+
         assertNotNull(result);
         verify(tagRepository).save(any(Tag.class));
         verify(noteRepository, never()).save(any(Note.class));
@@ -314,29 +311,29 @@ class TagServiceImplTest {
 
     @Test
     void deleteTag_Success() {
-        // Arrange
+
         testTag.getNotes().add(testNote);
         testNote.getTags().add(testTag);
 
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
         doNothing().when(tagRepository).delete(any(Tag.class));
 
-        // Act
+
         tagService.deleteTag(1L);
 
-        // Assert
+
         verify(tagRepository).delete(any(Tag.class));
         verify(cacheUtil).evict(anyString());
-        // Verify that the tag was removed from the note's tags
+
         assertFalse(testNote.getTags().contains(testTag));
     }
 
     @Test
     void deleteTag_TagNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
+
         when(tagRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
+
         assertThrows(ResourceNotFoundException.class, () -> tagService.deleteTag(1L));
         verify(tagRepository, never()).delete(any(Tag.class));
     }

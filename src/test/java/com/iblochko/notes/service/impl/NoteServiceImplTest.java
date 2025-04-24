@@ -85,17 +85,14 @@ class NoteServiceImplTest {
 
     @Test
     void createNote_Success() {
-        // Arrange
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
         when(noteMapper.toEntity(any(NoteDto.class))).thenReturn(testNote);
         when(noteRepository.save(any(Note.class))).thenReturn(testNote);
         when(noteMapper.toDto(any(Note.class))).thenReturn(testNoteDto);
 
-        // Act
         NoteDto result = noteService.createNote(testNoteDto);
 
-        // Assert
         assertNotNull(result);
         assertEquals(testNoteDto.getTitle(), result.getTitle());
         verify(noteRepository).save(any(Note.class));
@@ -105,56 +102,45 @@ class NoteServiceImplTest {
 
     @Test
     void createNote_EmptyTitle_ThrowsBadRequestException() {
-        // Arrange
         testNoteDto.setTitle("");
 
-        // Act & Assert
         assertThrows(BadRequestException.class, () -> noteService.createNote(testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void createNote_EmptyUsername_ThrowsBadRequestException() {
-        // Arrange
         testNoteDto.setUsername("");
 
-        // Act & Assert
         assertThrows(BadRequestException.class, () -> noteService.createNote(testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void createNote_UserNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.createNote(testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void createNote_TagNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
-        // Используем HashSet вместо Collections.singletonList
         Set<Long> tagIds = new HashSet<>();
         tagIds.add(1L);
         testNoteDto.setTagIds(tagIds);
 
-        // Убедитесь, что testNoteDto содержит имя пользователя
         testNoteDto.setUsername("testuser");
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(tagRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.createNote(testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void createNote_TagBelongsToAnotherUser_ThrowsResourceNotFoundException() {
-        // Arrange
         User anotherUser = new User();
         anotherUser.setUsername("anotherUser");
 
@@ -166,24 +152,20 @@ class NoteServiceImplTest {
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(tagFromAnotherUser));
         when(noteMapper.toEntity(any(NoteDto.class))).thenReturn(testNote);
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.createNote(testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void createNote_WithoutTags_Success() {
-        // Arrange
         testNoteDto.setTagIds(null);
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
         when(noteMapper.toEntity(any(NoteDto.class))).thenReturn(testNote);
         when(noteRepository.save(any(Note.class))).thenReturn(testNote);
         when(noteMapper.toDto(any(Note.class))).thenReturn(testNoteDto);
 
-        // Act
         NoteDto result = noteService.createNote(testNoteDto);
 
-        // Assert
         assertNotNull(result);
         verify(noteRepository).save(any(Note.class));
         verify(tagRepository, never()).save(any(Tag.class));
@@ -191,54 +173,123 @@ class NoteServiceImplTest {
     }
 
     @Test
-    void createBulkNotes_Success() {
-        // Arrange
-        List<Note> notes = List.of(testNote);
-        when(noteRepository.saveAll(anyList())).thenReturn(notes);
+    void createBulkNotes_WithValidNotes_ShouldReturnSavedNotes() {
+        List<NoteDto> notesDto = List.of(testNoteDto, testNoteDto);
 
-        // Act
-        List<Note> result = noteService.createBulkNotes(notes);
+        when(noteService.createNote(any(NoteDto.class))).thenReturn(testNoteDto);
+        when(noteMapper.toEntity(any(NoteDto.class))).thenReturn(testNote);
+        when(noteRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Assert
+        List<Note> result = noteService.createBulkNotes(notesDto);
+
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertEquals(2, result.size());
+        verify(noteService, times(2)).createNote(any(NoteDto.class));
+        verify(noteMapper, times(2)).toEntity(any(NoteDto.class));
         verify(noteRepository).saveAll(anyList());
+
+        for (Note note : result) {
+            assertNotNull(note.getCreatedAt());
+            assertNotNull(note.getUpdatedAt());
+        }
     }
 
     @Test
-    void createBulkNotes_EmptyList_ThrowsBadRequestException() {
-        // Act & Assert
-        assertThrows(BadRequestException.class, () -> noteService.createBulkNotes(Collections.emptyList()));
+    void createBulkNotes_WithNullList_ShouldThrowBadRequestException() {
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> noteService.createBulkNotes(null)
+        );
+
+        assertEquals("The list of notes cannot be empty", exception.getMessage());
         verify(noteRepository, never()).saveAll(anyList());
     }
 
     @Test
-    void createBulkNotes_NullList_ThrowsBadRequestException() {
-        // Act & Assert
-        assertThrows(BadRequestException.class, () -> noteService.createBulkNotes(null));
+    void createBulkNotes_WithEmptyList_ShouldThrowBadRequestException() {
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> noteService.createBulkNotes(Collections.emptyList())
+        );
+
+        assertEquals("The list of notes cannot be empty", exception.getMessage());
         verify(noteRepository, never()).saveAll(anyList());
     }
 
     @Test
-    void createBulkNotes_EmptyTitle_ThrowsBadRequestException() {
-        // Arrange
-        testNote.setTitle("");
-        List<Note> notes = List.of(testNote);
+    void createBulkNotes_WithEmptyTitle_ShouldThrowBadRequestException() {
+        NoteDto invalidNoteDto = new NoteDto();
+        invalidNoteDto.setTitle("");
+        invalidNoteDto.setUsername("testuser");
 
-        // Act & Assert
-        assertThrows(BadRequestException.class, () -> noteService.createBulkNotes(notes));
+        List<NoteDto> noteDtos = List.of(testNoteDto, invalidNoteDto);
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> noteService.createBulkNotes(noteDtos)
+        );
+
+        assertEquals("Note title cannot be empty", exception.getMessage());
+        verify(noteRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void createBulkNotes_WithNullTitle_ShouldThrowBadRequestException() {
+        NoteDto invalidNoteDto = new NoteDto();
+        invalidNoteDto.setTitle(null);
+        invalidNoteDto.setUsername("testuser");
+
+        List<NoteDto> noteDtos = List.of(testNoteDto, invalidNoteDto);
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> noteService.createBulkNotes(noteDtos)
+        );
+
+        assertEquals("Note title cannot be empty", exception.getMessage());
+        verify(noteRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void createBulkNotes_WithEmptyUsername_ShouldThrowBadRequestException() {
+        NoteDto invalidNoteDto = new NoteDto();
+        invalidNoteDto.setTitle("Test Title");
+        invalidNoteDto.setUsername("");
+
+        List<NoteDto> noteDtos = List.of(testNoteDto, invalidNoteDto);
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> noteService.createBulkNotes(noteDtos)
+        );
+
+        assertEquals("Note username cannot be empty", exception.getMessage());
+        verify(noteRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void createBulkNotes_WithNullUsername_ShouldThrowBadRequestException() {
+        NoteDto invalidNoteDto = new NoteDto();
+        invalidNoteDto.setTitle("Test Title");
+        invalidNoteDto.setUsername(null);
+
+        List<NoteDto> noteDtos = List.of(testNoteDto, invalidNoteDto);
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> noteService.createBulkNotes(noteDtos)
+        );
+
+        assertEquals("Note username cannot be empty", exception.getMessage());
         verify(noteRepository, never()).saveAll(anyList());
     }
 
     @Test
     void findNoteByTitle_Success() {
-        // Arrange
         when(noteRepository.findByTitleContaining(anyString())).thenReturn(List.of(testNote));
 
-        // Act
         List<Note> result = noteService.findNoteByTitle("Test");
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("Test Note", result.get(0).getTitle());
@@ -246,13 +297,10 @@ class NoteServiceImplTest {
 
     @Test
     void findNoteById_FromCache_Success() {
-        // Arrange
         when(cacheUtil.get(anyString(), eq(Note.class))).thenReturn(testNote);
 
-        // Act
         Note result = noteService.findNoteById(1L);
 
-        // Assert
         assertNotNull(result);
         assertEquals(testNote.getId(), result.getId());
         verify(noteRepository, never()).findById(anyLong());
@@ -260,14 +308,11 @@ class NoteServiceImplTest {
 
     @Test
     void findNoteById_FromRepository_Success() {
-        // Arrange
         when(cacheUtil.get(anyString(), eq(Note.class))).thenReturn(null);
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(testNote));
 
-        // Act
         Note result = noteService.findNoteById(1L);
 
-        // Assert
         assertNotNull(result);
         assertEquals(testNote.getId(), result.getId());
         verify(noteRepository).findById(anyLong());
@@ -276,74 +321,59 @@ class NoteServiceImplTest {
 
     @Test
     void findNoteById_NotFound_ThrowsResourceNotFoundException() {
-        // Arrange
         when(cacheUtil.get(anyString(), eq(Note.class))).thenReturn(null);
         when(noteRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.findNoteById(1L));
     }
 
     @Test
     void findNoteByTagName_Success() {
-        // Arrange
         when(tagRepository.findByName(anyString())).thenReturn(Optional.of(testTag));
         when(noteRepository.findByTagName(anyString())).thenReturn(List.of(testNote));
 
-        // Act
         List<Note> result = noteService.findNoteByTagName("testTag");
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
     }
 
     @Test
     void findNoteByTagName_TagNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
         when(tagRepository.findByName(anyString())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.findNoteByTagName("nonExistentTag"));
         verify(noteRepository, never()).findByTagName(anyString());
     }
 
     @Test
     void findNoteByUsername_Success() {
-        // Arrange
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(testUser));
         when(noteRepository.findByUsername(anyString())).thenReturn(List.of(testNote));
 
-        // Act
         List<Note> result = noteService.findNoteByUsername("testUser");
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
     }
 
     @Test
     void findNoteByUsername_UserNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.findNoteByUsername("nonExistentUser"));
         verify(noteRepository, never()).findByUsername(anyString());
     }
 
     @Test
     void updateNote_Success() {
-        // Arrange
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(testNote));
         when(tagRepository.findById(anyLong())).thenReturn(Optional.of(testTag));
         when(noteRepository.save(any(Note.class))).thenReturn(testNote);
         when(noteMapper.toDto(any(Note.class))).thenReturn(testNoteDto);
 
-        // Act
         NoteDto result = noteService.updateNote(1L, testNoteDto);
 
-        // Assert
         assertNotNull(result);
         verify(noteRepository).save(any(Note.class));
         verify(tagRepository).save(any(Tag.class));
@@ -352,48 +382,39 @@ class NoteServiceImplTest {
 
     @Test
     void updateNote_NoteNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
         when(noteRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.updateNote(1L, testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void updateNote_EmptyTitle_ThrowsBadRequestException() {
-        // Arrange
         testNoteDto.setTitle("");
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(testNote));
 
-        // Act & Assert
         assertThrows(BadRequestException.class, () -> noteService.updateNote(1L, testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void updateNote_TagNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(testNote));
         when(tagRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.updateNote(1L, testNoteDto));
         verify(noteRepository, never()).save(any(Note.class));
     }
 
     @Test
     void updateNote_WithoutTags_Success() {
-        // Arrange
         testNoteDto.setTagIds(null);
         when(noteRepository.findById(anyLong())).thenReturn(Optional.of(testNote));
         when(noteRepository.save(any(Note.class))).thenReturn(testNote);
         when(noteMapper.toDto(any(Note.class))).thenReturn(testNoteDto);
 
-        // Act
         NoteDto result = noteService.updateNote(1L, testNoteDto);
 
-        // Assert
         assertNotNull(result);
         verify(noteRepository).save(any(Note.class));
         verify(tagRepository, never()).save(any(Tag.class));
@@ -402,7 +423,6 @@ class NoteServiceImplTest {
 
     @Test
     void deleteNote_Success() {
-        // Arrange
         testNote.getTags().add(testTag);
         testTag.getNotes().add(testNote);
 
@@ -410,10 +430,8 @@ class NoteServiceImplTest {
         doNothing().when(noteRepository).delete(any(Note.class));
         when(tagRepository.saveAll(anyCollection())).thenReturn(List.of(testTag));
 
-        // Act
         noteService.deleteNote(1L);
 
-        // Assert
         verify(noteRepository).delete(any(Note.class));
         verify(tagRepository).saveAll(anyCollection());
         verify(cacheUtil).evict(anyString());
@@ -421,10 +439,8 @@ class NoteServiceImplTest {
 
     @Test
     void deleteNote_NoteNotFound_ThrowsResourceNotFoundException() {
-        // Arrange
         when(noteRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> noteService.deleteNote(1L));
         verify(noteRepository, never()).delete(any(Note.class));
     }

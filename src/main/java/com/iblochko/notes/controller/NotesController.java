@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -121,7 +120,7 @@ public class NotesController {
         @ApiResponse(responseCode = "201", description = "Заметки успешно созданы"),
         @ApiResponse(responseCode = "400", description = "Некорректные данные в запросе")
     })
-    public ResponseEntity<List<Note>> createNotes(@Valid @RequestBody List<Note> notes) {
+    public ResponseEntity<List<Note>> createNotes(@RequestBody List<NoteDto> notes) {
         List<Note> createdNotes = noteService.createBulkNotes(notes);
         return new ResponseEntity<>(createdNotes, HttpStatus.CREATED);
     }

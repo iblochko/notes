@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -79,30 +78,35 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public List<Note> createBulkNotes(List<Note> notes) {
-        if (notes == null || notes.isEmpty()) {
-            throw new BadRequestException("Список заметок не может быть пустым");
+    public List<Note> createBulkNotes(List<NoteDto> notesDto) {
+        if (notesDto == null || notesDto.isEmpty()) {
+            throw new BadRequestException("The list of notes cannot be empty");
         }
 
-        // Валидация заметок с использованием Stream API
-        boolean hasInvalidNotes = notes.stream()
+        boolean hasInvalidNotes = notesDto.stream()
                 .anyMatch(note -> note.getTitle() == null || note.getTitle().trim().isEmpty());
 
         if (hasInvalidNotes) {
-            throw new BadRequestException("Все заметки должны иметь заголовок");
+            throw new BadRequestException("Note title cannot be empty");
         }
 
-        // Установка времени создания/обновления для всех заметок
+        hasInvalidNotes = notesDto.stream()
+                .anyMatch(note -> note.getUsername() == null
+                        || note.getUsername().trim().isEmpty());
+        if (hasInvalidNotes) {
+            throw new BadRequestException("Note username cannot be empty");
+        }
+
         LocalDateTime now = LocalDateTime.now();
-        List<Note> preparedNotes = notes.stream()
+
+
+        return notesDto.stream()
+                .map(noteDto -> noteMapper.toEntity(this.createNote(noteDto)))
                 .peek(note -> {
                     note.setCreatedAt(now);
                     note.setUpdatedAt(now);
                 })
-                .collect(Collectors.toList());
-
-        // Сохранение всех заметок
-        return noteRepository.saveAll(preparedNotes);
+                .toList();
     }
 
     @Override

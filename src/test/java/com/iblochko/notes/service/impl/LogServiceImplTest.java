@@ -33,13 +33,10 @@ public class LogServiceImplTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Create a temporary log file for testing
         logFile = tempDir.resolve("application.log");
 
-        // Inject the path of the temporary file into the service
         ReflectionTestUtils.setField(logService, "logFilePath", logFile.toString());
 
-        // Create sample log content
         List<String> logLines = Arrays.asList(
                 "2023-05-15 10:30:45 INFO  Test log entry from May 15",
                 "2023-05-15 11:22:33 ERROR Exception occurred in the application",
@@ -48,19 +45,15 @@ public class LogServiceImplTest {
                 "2023-06-01 08:30:00 INFO  Log entry from June"
         );
 
-        // Write the sample logs to the temporary file
         Files.write(logFile, logLines);
     }
 
     @Test
     void getLogsForDate_WithExistingEntries_ShouldReturnMatchingLogs() throws IOException {
-        // Arrange
         LocalDate date = LocalDate.of(2023, 5, 15);
 
-        // Act
         String result = logService.getLogsForDate(date);
 
-        // Assert
         assertTrue(result.contains("2023-05-15 10:30:45"));
         assertTrue(result.contains("2023-05-15 11:22:33"));
         assertFalse(result.contains("2023-05-16"));
@@ -69,25 +62,19 @@ public class LogServiceImplTest {
 
     @Test
     void getLogsForDate_WithNoMatchingEntries_ShouldReturnNoLogsMessage() throws IOException {
-        // Arrange
         LocalDate date = LocalDate.of(2023, 5, 20);
 
-        // Act
         String result = logService.getLogsForDate(date);
 
-        // Assert
         assertEquals("No logs found for date: 2023-05-20", result);
     }
 
     @Test
     void getLogsForDate_WithNonExistentLogFile_ShouldThrowIOException() throws IOException {
-        // Arrange
         LocalDate date = LocalDate.of(2023, 5, 15);
 
-        // Delete the log file to simulate non-existent file
         Files.delete(logFile);
 
-        // Act & Assert
         IOException exception = assertThrows(IOException.class, () -> logService.getLogsForDate(date));
 
         assertEquals("Log file does not exist", exception.getMessage());
@@ -95,14 +82,11 @@ public class LogServiceImplTest {
 
     @Test
     void getLogsForDate_WithIOExceptionDuringReading_ShouldPropagateException() throws IOException {
-        // Arrange
         LocalDate date = LocalDate.of(2023, 5, 15);
 
-        // Изменить этот подход - нельзя делать spy из mock
         doThrow(new IOException("Error reading file"))
                 .when(logService).getLogsForDate(any(LocalDate.class));
 
-        // Act & Assert
         IOException exception = assertThrows(IOException.class, () -> logService.getLogsForDate(date));
 
         assertEquals("Error reading file", exception.getMessage());
@@ -110,7 +94,6 @@ public class LogServiceImplTest {
 
     @Test
     void getLogsForDate_WithDifferentDateFormats_ShouldMatchCorrectly() throws IOException {
-        // Arrange - Create a new log file with various date formats
         List<String> mixedFormatLogs = Arrays.asList(
                 "2023-07-01 Info log with correct format",
                 "07-01-2023 Info log with different format",  // This shouldn't match
@@ -120,10 +103,8 @@ public class LogServiceImplTest {
 
         Files.write(logFile, mixedFormatLogs);
 
-        // Act
         String result = logService.getLogsForDate(LocalDate.of(2023, 7, 1));
 
-        // Assert
         assertTrue(result.contains("2023-07-01 Info"));
         assertTrue(result.contains("2023-07-01T12:34:56"));
         assertFalse(result.contains("07-01-2023"));
@@ -133,13 +114,10 @@ public class LogServiceImplTest {
 
     @Test
     void getLogsForDate_WithEmptyLogFile_ShouldReturnNoLogsMessage() throws IOException {
-        // Arrange - Create an empty log file
         Files.write(logFile, List.of());
 
-        // Act
         String result = logService.getLogsForDate(LocalDate.of(2023, 5, 15));
 
-        // Assert
         assertEquals("No logs found for date: 2023-05-15", result);
     }
 }
