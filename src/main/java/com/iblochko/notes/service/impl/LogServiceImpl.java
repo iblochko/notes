@@ -95,7 +95,14 @@ public class LogServiceImpl implements LogService {
         try {
             task.setStatus(LogTask.Status.PROCESSING);
 
-            Thread.sleep(5000);
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                task.setStatus(LogTask.Status.FAILED);
+                task.setErrorMessage("Task processing was interrupted");
+                return;
+            }
 
             String fileName = logDirectory + File.separator + "log_" + task.getId() + ".txt";
             try (FileWriter writer = new FileWriter(fileName)) {
