@@ -1,5 +1,6 @@
 package com.iblochko.notes.service.impl;
 
+import com.iblochko.notes.service.LogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,16 +10,21 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 @ExtendWith(MockitoExtension.class)
 public class LogServiceImplTest {
 
@@ -46,6 +52,7 @@ public class LogServiceImplTest {
         );
 
         Files.write(logFile, logLines);
+
     }
 
     @Test
@@ -96,9 +103,9 @@ public class LogServiceImplTest {
     void getLogsForDate_WithDifferentDateFormats_ShouldMatchCorrectly() throws IOException {
         List<String> mixedFormatLogs = Arrays.asList(
                 "2023-07-01 Info log with correct format",
-                "07-01-2023 Info log with different format",  // This shouldn't match
-                "2023/07/01 Info log with slashes",           // This shouldn't match
-                "2023-07-01T12:34:56 Log with time in ISO format"  // This should match
+                "07-01-2023 Info log with different format",
+                "2023/07/01 Info log with slashes",
+                "2023-07-01T12:34:56 Log with time in ISO format"
         );
 
         Files.write(logFile, mixedFormatLogs);
@@ -119,5 +126,102 @@ public class LogServiceImplTest {
         String result = logService.getLogsForDate(LocalDate.of(2023, 5, 15));
 
         assertEquals("No logs found for date: 2023-05-15", result);
+    }
+
+    @Test
+    void createLogTask_ShouldReturnTaskId() {
+
+        String taskId = logService.createLogTask("Test log content");
+
+
+        assertNotNull(taskId);
+        assertFalse(taskId.isEmpty());
+    }
+
+    @Test
+    void getTaskStatus_ShouldReturnTaskWithCorrectStatus() throws InterruptedException {
+
+        String taskId = logService.createLogTask("Test log content");
+
+
+        LogService.LogTask task = logService.getTaskStatus(taskId);
+
+
+        assertNotNull(task);
+        assertEquals(taskId, task.getId());
+        assertEquals("Test log content", task.getContent());
+
+        CountDownLatch latch = new CountDownLatch(1);
+        for (int i = 0; i < 10; i++) {
+            if (task.getStatus() == LogService.LogTask.Status.COMPLETED) {
+                latch.countDown();
+                break;
+            }
+            Thread.sleep(1000);
+        }
+
+        latch.await(10, TimeUnit.SECONDS);
+
+        task = logService.getTaskStatus(taskId);
+
+        assertEquals(LogService.LogTask.Status.COMPLETED, task.getStatus());
+        assertNotNull(task.getFilePath());
+        assertTrue(new File(task.getFilePath()).exists());
+    }
+
+    @Test
+    void getLogFile_ShouldReturnFileContents() throws IOException, InterruptedException {
+        String content = "Test log content for file";
+        String taskId = logService.createLogTask(content);
+
+        LogService.LogTask task = null;
+        for (int i = 0; i < 10; i++) {
+            task = logService.getTaskStatus(taskId);
+            if (task.getStatus() == LogService.LogTask.Status.COMPLETED) {
+                break;
+            }
+            Thread.sleep(1000);
+        }
+
+        assertNotNull(task);
+        assertEquals(LogService.LogTask.Status.COMPLETED, task.getStatus());
+
+        byte[] fileContent = logService.getLogFile(taskId);
+
+        assertNotNull(fileContent);
+        assertTrue(fileContent.length > 0);
+
+        String fileContentStr = new String(fileContent);
+        assertTrue(fileContentStr.contains(content));
+        assertTrue(fileContentStr.contains(taskId));
+    }
+
+    @Test
+    void getLogFile_ShouldReturnNull_WhenTaskDoesNotExist() throws IOException {
+        byte[] result = logService.getLogFile("non-existent-task");
+
+        assertNull(result);
+    }
+
+    @Test
+    void getLogFile_ShouldReturnNull_WhenTaskIsNotCompleted() throws IOException {
+        String taskId = "test-task";
+        LogService.LogTask task = new LogService.LogTask(taskId, "Test content");
+        task.setStatus(LogService.LogTask.Status.PROCESSING);
+
+        try {
+            Field tasksField = LogServiceImpl.class.getDeclaredField("tasks");
+            tasksField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.concurrent.ConcurrentHashMap<String, LogService.LogTask> tasks =
+                    (java.util.concurrent.ConcurrentHashMap<String, LogService.LogTask>) tasksField.get(logService);
+            tasks.put(taskId, task);
+        } catch (Exception e) {
+            fail("Couldn't set up test properly: " + e.getMessage());
+        }
+
+        byte[] result = logService.getLogFile(taskId);
+
+        assertNull(result);
     }
 }

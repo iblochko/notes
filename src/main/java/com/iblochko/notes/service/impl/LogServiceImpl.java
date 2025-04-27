@@ -2,24 +2,43 @@ package com.iblochko.notes.service.impl;
 
 import com.iblochko.notes.service.LogService;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 @Service
 public class LogServiceImpl implements LogService {
 
+    private final ExecutorService executorService = Executors.newFixedThreadPool(5);
+    private final ConcurrentHashMap<String, LogTask> tasks = new ConcurrentHashMap<>();
+    private final String logDirectory = "logs";
+
     @Value("${logging.file.name}")
     private String logFilePath;
+
+    public LogServiceImpl() {
+        File logDir = new File(logDirectory);
+        if (!logDir.exists()) {
+            logDir.mkdirs();
+        }
+    }
 
     @Override
     public String getLogsForDate(LocalDate date) throws IOException {
@@ -45,4 +64,52 @@ public class LogServiceImpl implements LogService {
         }
         return String.join("\n", matchingLines);
     }
+
+    @Override
+    public String createLogTask(String content) {
+        String taskId = UUID.randomUUID().toString();
+        LogTask task = new LogTask(taskId, content);
+        tasks.put(taskId, task);
+
+        executorService.submit(() -> processLogTask(task));
+
+        return taskId;
+    }
+
+    @Override
+    public LogTask getTaskStatus(String taskId) {
+        return tasks.get(taskId);
+    }
+
+    @Override
+    public byte[] getLogFile(String taskId) throws IOException {
+        LogTask task = tasks.get(taskId);
+        if (task == null || task.getStatus() != LogTask.Status.COMPLETED) {
+            return null;
+        }
+
+        return Files.readAllBytes(Paths.get(task.getFilePath()));
+    }
+
+    private void processLogTask(LogTask task) {
+        try {
+            task.setStatus(LogTask.Status.PROCESSING);
+
+            Thread.sleep(5000);
+
+            String fileName = logDirectory + File.separator + "log_" + task.getId() + ".txt";
+            try (FileWriter writer = new FileWriter(fileName)) {
+                writer.write("Log created at: "
+                        + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "\n");
+                writer.write("Content: " + task.getContent() + "\n");
+                writer.write("Task ID: " + task.getId() + "\n");
+            }
+            task.setFilePath(fileName);
+            task.setStatus(LogTask.Status.COMPLETED);
+        } catch (Exception e) {
+            task.setStatus(LogTask.Status.FAILED);
+            task.setErrorMessage(e.getMessage());
+        }
+    }
+
 }
