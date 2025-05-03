@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,9 +65,9 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public String createLogTask(String content) {
+    public String createLogTask(String content, LocalDate date) {
         String taskId = UUID.randomUUID().toString();
-        LogTask task = new LogTask(taskId, content);
+        LogTask task = new LogTask(taskId, content, date);
         tasks.put(taskId, task);
 
         executorService.submit(() -> processLogTask(task));
@@ -96,7 +95,7 @@ public class LogServiceImpl implements LogService {
             task.setStatus(LogTask.Status.PROCESSING);
 
             try {
-                Thread.sleep(5000);
+                Thread.sleep(30000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 task.setStatus(LogTask.Status.FAILED);
@@ -106,10 +105,7 @@ public class LogServiceImpl implements LogService {
 
             String fileName = logDirectory + File.separator + "log_" + task.getId() + ".txt";
             try (FileWriter writer = new FileWriter(fileName)) {
-                writer.write("Log created at: "
-                        + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "\n");
-                writer.write("Content: " + task.getContent() + "\n");
-                writer.write("Task ID: " + task.getId() + "\n");
+                writer.write(this.getLogsForDate(task.getDate()));
             }
             task.setFilePath(fileName);
             task.setStatus(LogTask.Status.COMPLETED);

@@ -131,7 +131,7 @@ public class LogServiceImplTest {
     @Test
     void createLogTask_ShouldReturnTaskId() {
 
-        String taskId = logService.createLogTask("Test log content");
+        String taskId = logService.createLogTask("Test log content", LocalDate.now());
 
 
         assertNotNull(taskId);
@@ -141,7 +141,7 @@ public class LogServiceImplTest {
     @Test
     void getTaskStatus_ShouldReturnTaskWithCorrectStatus() throws InterruptedException {
 
-        String taskId = logService.createLogTask("Test log content");
+        String taskId = logService.createLogTask("Test log content", LocalDate.now());
 
 
         LogService.LogTask task = logService.getTaskStatus(taskId);
@@ -172,7 +172,7 @@ public class LogServiceImplTest {
     @Test
     void getLogFile_ShouldReturnFileContents() throws IOException, InterruptedException {
         String content = "Test log content for file";
-        String taskId = logService.createLogTask(content);
+        String taskId = logService.createLogTask(content, LocalDate.now());
 
         LogService.LogTask task = null;
         for (int i = 0; i < 10; i++) {
@@ -206,7 +206,7 @@ public class LogServiceImplTest {
     @Test
     void getLogFile_ShouldReturnNull_WhenTaskIsNotCompleted() throws IOException {
         String taskId = "test-task";
-        LogService.LogTask task = new LogService.LogTask(taskId, "Test content");
+        LogService.LogTask task = new LogService.LogTask(taskId, "Test content", LocalDate.now());
         task.setStatus(LogService.LogTask.Status.PROCESSING);
 
         try {

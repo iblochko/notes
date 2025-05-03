@@ -59,7 +59,7 @@ public class LogController {
     }
 
 
-    @PostMapping
+    @PostMapping("/create")
     @Operation(summary = "Create log processing task",
             description =
                     "Creates a new log processing task with the "
@@ -73,8 +73,9 @@ public class LogController {
     })
     public ResponseEntity<String> createLog(
             @Parameter(description = "Log content to process", required = true)
-            @RequestBody String content) {
-        String taskId = logService.createLogTask(content);
+            @RequestBody String content,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        String taskId = logService.createLogTask(content, date);
         return ResponseEntity.accepted().body(taskId);
     }
 
@@ -118,7 +119,7 @@ public class LogController {
             }
 
             if (task.getStatus() != LogService.LogTask.Status.COMPLETED) {
-                return ResponseEntity.status(HttpStatus.PROCESSING).build();
+                return ResponseEntity.notFound().build();
             }
 
             byte[] data = logService.getLogFile(taskId);

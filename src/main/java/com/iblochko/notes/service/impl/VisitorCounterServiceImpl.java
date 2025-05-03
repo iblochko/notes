@@ -3,35 +3,34 @@ package com.iblochko.notes.service.impl;
 import com.iblochko.notes.service.VisitorCounterService;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Service;
+
 
 @Service
 public class VisitorCounterServiceImpl implements VisitorCounterService {
-    private final Map<String, AtomicLong> urlCounters = new ConcurrentHashMap<>();
+    private final Map<String, Long> urlCounters = new ConcurrentHashMap<>();
 
-    private final AtomicLong totalCounter = new AtomicLong(0);
+    private long totalCounter = 0;
 
-    public long registerVisit(String url) {
-        totalCounter.incrementAndGet();
+    public synchronized long registerVisit(String url) {
+        totalCounter++;
 
-        AtomicLong urlCounter = urlCounters.computeIfAbsent(url, k -> new AtomicLong(0));
+        Long count = urlCounters.getOrDefault(url, 0L);
+        urlCounters.put(url, count + 1L);
 
-        return urlCounter.getAndIncrement();
+        return count;
     }
 
-    public long getVisitCount(String url) {
-        AtomicLong counter = urlCounters.get(url);
-        return counter != null ? counter.get() : 0;
+    public synchronized long getVisitCount(String url) {
+        Long counter = urlCounters.get(url);
+        return counter != null ? counter : 0;
     }
 
-    public long getTotalVisitCount() {
-        return totalCounter.get();
+    public synchronized long getTotalVisitCount() {
+        return totalCounter;
     }
 
-    public Map<String, Long> getAllStats() {
-        Map<String, Long> stats = new ConcurrentHashMap<>();
-        urlCounters.forEach((url, counter) -> stats.put(url, counter.get()));
-        return stats;
+    public synchronized Map<String, Long> getAllStats() {
+        return new ConcurrentHashMap<>(urlCounters);
     }
 }

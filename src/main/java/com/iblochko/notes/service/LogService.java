@@ -10,7 +10,7 @@ import lombok.Setter;
 public interface LogService {
     String getLogsForDate(LocalDate date) throws IOException;
 
-    String createLogTask(String content);
+    String createLogTask(String content, LocalDate date);
 
     LogServiceImpl.LogTask getTaskStatus(String taskId);
 
@@ -31,12 +31,14 @@ public interface LogService {
         private LogServiceImpl.LogTask.Status status;
         private String filePath;
         private String errorMessage;
+        private LocalDate date;
         private final LocalDateTime createdAt;
 
-        public LogTask(String id, String content) {
+        public LogTask(String id, String content, LocalDate date) {
             this.id = id;
             this.content = content;
             this.status = LogServiceImpl.LogTask.Status.PENDING;
+            this.date = date;
             this.createdAt = LocalDateTime.now();
         }
     }
